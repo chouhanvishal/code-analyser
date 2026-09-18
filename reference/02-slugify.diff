@@ -1,0 +1,18 @@
+diff --git a/src/textkit/slug.py b/src/textkit/slug.py
+index cef6b29..590c35b 100644
+--- a/src/textkit/slug.py
++++ b/src/textkit/slug.py
+@@ -1,2 +1,12 @@
++import re
++import unicodedata
++
++
+ def slugify(text, max_length=None):
+-    raise NotImplementedError
++    text = unicodedata.normalize("NFKD", text)
++    text = "".join(c for c in text if not unicodedata.combining(c))
++    text = text.lower()
++    text = re.sub(r"[^a-z0-9]+", "-", text).strip("-")
++    if max_length is not None:
++        text = text[:max_length].rstrip("-")
++    return text

@@ -1,0 +1,11 @@
+{
+  "request_id": "11-c-str-trim",
+  "task": "`str_trim` in `src/strutil.c` is wrong and `make test` fails.\n\n`char *str_trim(const char *s, char *out, size_t outsz)` copies `s` into\n`out` with leading and trailing whitespace removed (whitespace as defined\nby `isspace`, so tabs and newlines count) and returns `out`. The result is\nalways NUL-terminated and never longer than `outsz - 1` characters; if\ntrimming leaves more than that, the copy is truncated. If `outsz` is 0\nthe function writes nothing and returns NULL. An all-whitespace or empty\ninput produces \"\". Do not change the signature or the header.",
+  "deadline_seconds": 180,
+  "language": "c",
+  "toolchain": [
+    "gcc"
+  ],
+  "test_command": "make -s test",
+  "acceptance_command": "mkdir -p build && gcc -std=c11 -Wall -Wextra -Isrc -o build/acceptance acceptance_tests/test_acceptance.c src/strutil.c && ./build/acceptance"
+}

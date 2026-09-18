@@ -1,0 +1,11 @@
+{
+  "request_id": "07-bash-semver-bump",
+  "task": "`bin/bump_version.sh <version> <major|minor|patch>` prints the bumped\nsemantic version, but `tests/run.sh` fails.\n\nRequired behaviour:\n- A minor bump resets patch to 0; a major bump resets minor and patch to 0.\n- An optional leading \"v\" is accepted and preserved in the output\n  (\"v1.2.3\" patch -> \"v1.2.4\").\n- The version must match X.Y.Z with non-negative integers; otherwise print\n  an error to stderr and exit 2. An unknown part also exits 2.\n- Exactly two arguments; anything else exits 2.",
+  "deadline_seconds": 180,
+  "language": "bash",
+  "toolchain": [
+    "bash"
+  ],
+  "test_command": "bash tests/run.sh",
+  "acceptance_command": "bash acceptance_tests/run.sh"
+}

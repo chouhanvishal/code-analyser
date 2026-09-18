@@ -1,0 +1,30 @@
+diff --git a/bin/bump_version.sh b/bin/bump_version.sh
+index 32db04e..e4e4f33 100644
+--- a/bin/bump_version.sh
++++ b/bin/bump_version.sh
+@@ -1,12 +1,22 @@
+ #!/usr/bin/env bash
+ set -euo pipefail
++if [[ $# -ne 2 ]]; then
++  echo "usage: $0 <version> <major|minor|patch>" >&2
++  exit 2
++fi
+ version="$1"
+ part="$2"
++prefix=""
++if [[ "$version" == v* ]]; then prefix="v"; version="${version#v}"; fi
++if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
++  echo "invalid version: $1" >&2
++  exit 2
++fi
+ IFS=. read -r major minor patch <<< "$version"
+ case "$part" in
+-  major) major=$((major + 1)) ;;
+-  minor) minor=$((minor + 1)) ;;
++  major) major=$((major + 1)); minor=0; patch=0 ;;
++  minor) minor=$((minor + 1)); patch=0 ;;
+   patch) patch=$((patch + 1)) ;;
+   *) echo "unknown part: $part" >&2; exit 2 ;;
+ esac
+-echo "$major.$minor.$patch"
++echo "${prefix}${major}.${minor}.${patch}"

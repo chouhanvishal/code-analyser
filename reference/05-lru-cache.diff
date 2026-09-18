@@ -1,0 +1,41 @@
+diff --git a/src/cache/lru.py b/src/cache/lru.py
+index 6287975..c6c77b7 100644
+--- a/src/cache/lru.py
++++ b/src/cache/lru.py
+@@ -1,18 +1,30 @@
++from collections import OrderedDict
++
++
+ class LRUCache:
+     def __init__(self, capacity):
+-        raise NotImplementedError
++        if type(capacity) is not int or capacity <= 0:
++            raise ValueError("capacity must be an int > 0")
++        self.capacity = capacity
++        self._data = OrderedDict()
+ 
+     def get(self, key):
+-        raise NotImplementedError
++        if key not in self._data:
++            return None
++        self._data.move_to_end(key)
++        return self._data[key]
+ 
+     def put(self, key, value):
+-        raise NotImplementedError
++        self._data[key] = value
++        self._data.move_to_end(key)
++        while len(self._data) > self.capacity:
++            self._data.popitem(last=False)
+ 
+     def contains(self, key):
+-        raise NotImplementedError
++        return key in self._data
+ 
+     def keys(self):
+-        raise NotImplementedError
++        return list(self._data.keys())
+ 
+     def __len__(self):
+-        raise NotImplementedError
++        return len(self._data)

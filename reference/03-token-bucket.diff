@@ -1,0 +1,27 @@
+diff --git a/src/limiter/bucket.py b/src/limiter/bucket.py
+index 713ce67..287d30f 100644
+--- a/src/limiter/bucket.py
++++ b/src/limiter/bucket.py
+@@ -1,6 +1,20 @@
+ class TokenBucket:
+     def __init__(self, capacity, refill_per_second):
+-        raise NotImplementedError
++        if capacity <= 0 or refill_per_second <= 0:
++            raise ValueError("capacity and refill_per_second must be > 0")
++        self.capacity = capacity
++        self.refill_per_second = refill_per_second
++        self.tokens = float(capacity)
++        self.last_now = None
+ 
+     def allow(self, now, cost=1):
+-        raise NotImplementedError
++        if cost <= 0:
++            raise ValueError("cost must be > 0")
++        if self.last_now is not None:
++            elapsed = max(0.0, now - self.last_now)
++            self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_per_second)
++        self.last_now = now if self.last_now is None else max(self.last_now, now)
++        if self.tokens >= cost:
++            self.tokens -= cost
++            return True
++        return False

@@ -1,0 +1,11 @@
+{
+  "request_id": "05-lru-cache",
+  "task": "Implement `LRUCache` in `src/cache/lru.py`.\n\n`LRUCache(capacity)` raises ValueError unless capacity is an int greater\nthan zero. `get(key)` returns the stored value and marks the key as most\nrecently used, or returns None if absent. `put(key, value)` stores the\nvalue, marks the key as most recently used, and when the cache is over\ncapacity evicts the least recently used key. `len(cache)` returns the\nnumber of stored keys. `keys()` returns a list of keys from least to most\nrecently used. Storing `None` as a value is allowed and must be\ndistinguishable from a missing key via `contains(key)`.",
+  "deadline_seconds": 240,
+  "language": "python",
+  "toolchain": [
+    "python3"
+  ],
+  "test_command": "PYTHONPATH=src python3 -m unittest discover -s tests -t . -v",
+  "acceptance_command": "PYTHONPATH=src python3 -m unittest discover -s acceptance_tests -t . -v"
+}

@@ -1,0 +1,26 @@
+diff --git a/src/strutil.c b/src/strutil.c
+index a521473..ada7db9 100644
+--- a/src/strutil.c
++++ b/src/strutil.c
+@@ -1,12 +1,19 @@
++#include <ctype.h>
+ #include <string.h>
+ #include "strutil.h"
+ 
+ char *str_trim(const char *s, char *out, size_t outsz) {
+-    while (*s == ' ') {
++    if (outsz == 0) {
++        return NULL;
++    }
++    while (*s && isspace((unsigned char)*s)) {
+         s++;
+     }
+     size_t n = strlen(s);
+-    if (n >= outsz) {
++    while (n > 0 && isspace((unsigned char)s[n - 1])) {
++        n--;
++    }
++    if (n > outsz - 1) {
+         n = outsz - 1;
+     }
+     memcpy(out, s, n);

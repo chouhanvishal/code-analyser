@@ -1,0 +1,11 @@
+{
+  "request_id": "04-config-precedence",
+  "task": "`load()` in `src/appconf/loader.py` merges configuration from three sources\nbut applies them in the wrong order, and it ignores environment variables\nthat use the `APP_` prefix.\n\nRequired precedence, highest first: environment variables, file values,\ndefaults. An environment variable `APP_<KEY>` (upper case) sets `<key>`\n(lower case). Environment variables without the `APP_` prefix are ignored.\nValues from the environment are strings; convert \"true\"/\"false\"\n(case-insensitive) to booleans and purely numeric strings to int. Keys\npresent in no source must not appear in the result.",
+  "deadline_seconds": 180,
+  "language": "python",
+  "toolchain": [
+    "python3"
+  ],
+  "test_command": "PYTHONPATH=src python3 -m unittest discover -s tests -t . -v",
+  "acceptance_command": "PYTHONPATH=src python3 -m unittest discover -s acceptance_tests -t . -v"
+}

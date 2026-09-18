@@ -1,0 +1,11 @@
+{
+  "request_id": "03-token-bucket",
+  "task": "Implement `TokenBucket` in `src/limiter/bucket.py`.\n\n`TokenBucket(capacity, refill_per_second)` starts full. `allow(now, cost=1)`\nreturns True and consumes `cost` tokens when at least `cost` tokens are\navailable, otherwise returns False and consumes nothing.\n\nRefill happens lazily inside `allow`: tokens gained equal\n`refill_per_second * (now - last_now)`, capped at `capacity`. `now` is a\nfloat timestamp supplied by the caller. If `now` is earlier than the\nprevious call, treat elapsed time as zero. `capacity` and\n`refill_per_second` must be greater than zero; otherwise raise ValueError\nfrom the constructor. `cost` must be greater than zero; otherwise raise\nValueError from `allow`.",
+  "deadline_seconds": 240,
+  "language": "python",
+  "toolchain": [
+    "python3"
+  ],
+  "test_command": "PYTHONPATH=src python3 -m unittest discover -s tests -t . -v",
+  "acceptance_command": "PYTHONPATH=src python3 -m unittest discover -s acceptance_tests -t . -v"
+}

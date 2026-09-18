@@ -1,0 +1,11 @@
+{
+  "request_id": "01-pricing-tax",
+  "task": "`total()` in `src/pricing/cart.py` returns the wrong amount and\n`tests/test_cart.py::TotalTests::test_total_applies_tax` fails.\n\nFix `total()` so that it returns the subtotal plus tax, rounded to two\ndecimals. A cart with no items must total 0.0. A tax rate of 0 must return\nthe subtotal unchanged. Do not change the function signature.",
+  "deadline_seconds": 180,
+  "language": "python",
+  "toolchain": [
+    "python3"
+  ],
+  "test_command": "PYTHONPATH=src python3 -m unittest discover -s tests -t . -v",
+  "acceptance_command": "PYTHONPATH=src python3 -m unittest discover -s acceptance_tests -t . -v"
+}

@@ -1,0 +1,17 @@
+diff --git a/src/parseDuration.js b/src/parseDuration.js
+index 4b4dc49..4c747b9 100644
+--- a/src/parseDuration.js
++++ b/src/parseDuration.js
+@@ -1,3 +1,11 @@
++const RE = /^\s*(?:(\d+)\s*d)?\s*(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?\s*$/i;
++
+ module.exports = function parseDuration(text) {
+-  throw new Error("not implemented");
++  if (typeof text !== "string") throw new TypeError("duration must be a string");
++  const m = RE.exec(text);
++  if (!m || m.slice(1).every((g) => g === undefined)) {
++    throw new TypeError(`invalid duration: ${text}`);
++  }
++  const [d, h, min, s] = m.slice(1).map((g) => (g === undefined ? 0 : parseInt(g, 10)));
++  return d * 86400 + h * 3600 + min * 60 + s;
+ };

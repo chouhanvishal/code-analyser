@@ -1,0 +1,11 @@
+{
+  "request_id": "10-java-roman-numerals",
+  "task": "Implement both methods of `roman.RomanNumerals` in\n`src/main/java/roman/RomanNumerals.java`. They currently throw\nUnsupportedOperationException.\n\n`toRoman(int n)` converts 1..3999 to standard subtractive notation\n(4 -> \"IV\", 9 -> \"IX\", 40 -> \"XL\", 90 -> \"XC\", 400 -> \"CD\", 900 -> \"CM\")\nand throws IllegalArgumentException outside that range.\n`fromRoman(String s)` converts a string in that same standard form back\nto an int and throws IllegalArgumentException for null, empty, lowercase,\nunknown characters, or any string that is not the canonical form of a\nnumber (for example \"IIII\", \"VX\", \"IM\"). `fromRoman(toRoman(n)) == n`\nmust hold for every n in range. Standard library only.",
+  "deadline_seconds": 240,
+  "language": "java",
+  "toolchain": [
+    "javac"
+  ],
+  "test_command": "rm -rf out && javac -d out $(find src -name '*.java') && java -cp out roman.RomanNumeralsTest",
+  "acceptance_command": "rm -rf out && javac -d out $(find src/main acceptance_tests -name '*.java') && java -cp out acceptance.AcceptanceTest"
+}

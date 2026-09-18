@@ -1,0 +1,29 @@
+diff --git a/src/appconf/loader.py b/src/appconf/loader.py
+index d0e40fb..e7d78fd 100644
+--- a/src/appconf/loader.py
++++ b/src/appconf/loader.py
+@@ -1,6 +1,21 @@
++PREFIX = "APP_"
++
++
++def _convert(value):
++    lowered = value.lower()
++    if lowered == "true":
++        return True
++    if lowered == "false":
++        return False
++    if value.isdigit():
++        return int(value)
++    return value
++
++
+ def load(defaults, file_values, env):
+-    result = {}
+-    result.update(env)
++    result = dict(defaults)
+     result.update(file_values)
+-    result.update(defaults)
++    for key, value in env.items():
++        if key.startswith(PREFIX):
++            result[key[len(PREFIX):].lower()] = _convert(value)
+     return result

@@ -1,0 +1,11 @@
+{
+  "request_id": "08-go-ring-buffer",
+  "task": "Implement the ring buffer in `ring/ring.go`. The functions currently panic.\n\n`New(capacity int) (*Ring, error)` returns an error when capacity <= 0.\n`Push(v int) (evicted int, wasEvicted bool)` appends v as the newest item;\nwhen the buffer is already full it drops the oldest item and returns it\nwith true, otherwise returns 0 and false. `Len() int` is the number of\nstored items. `Items() []int` returns a new slice, oldest to newest;\nmutating it must not affect the buffer. Use no packages outside the\nstandard library.",
+  "deadline_seconds": 240,
+  "language": "go",
+  "toolchain": [
+    "go"
+  ],
+  "test_command": "go test ./...",
+  "acceptance_command": "go test ./acceptance_tests/"
+}

@@ -1,0 +1,11 @@
+{
+  "request_id": "06-js-parse-duration",
+  "task": "Implement `parseDuration(text)` in `src/parseDuration.js` (CommonJS export).\nIt currently throws.\n\nInput is a duration such as \"1h30m\", \"2d 4h\", \"45s\", or \"1H 5M 3S\". Units\nare d (86400 s), h (3600 s), m (60 s), s (1 s), case-insensitive, and must\nappear in that order, each at most once, each with a non-negative integer.\nWhitespace between components is allowed. Return the total number of\nseconds as an integer. Throw a TypeError for anything else, including an\nempty string, unknown units, units out of order, and non-string input.",
+  "deadline_seconds": 180,
+  "language": "javascript",
+  "toolchain": [
+    "node"
+  ],
+  "test_command": "node --test tests/*.test.js",
+  "acceptance_command": "node --test acceptance_tests/*.test.js"
+}

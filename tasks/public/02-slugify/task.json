@@ -1,0 +1,11 @@
+{
+  "request_id": "02-slugify",
+  "task": "Implement `slugify(text, max_length=None)` in `src/textkit/slug.py`.\nIt currently raises NotImplementedError.\n\nRules:\n- Normalize with unicodedata NFKD and drop combining marks, so \"Caf\u00e9\" becomes \"cafe\".\n- Lowercase the result.\n- Replace every run of characters that are not ASCII letters or digits with a single \"-\".\n- Strip leading and trailing \"-\".\n- If max_length is given, truncate to at most max_length characters and then\n  strip any trailing \"-\" again.\n- Empty or whitespace-only input returns \"\".",
+  "deadline_seconds": 180,
+  "language": "python",
+  "toolchain": [
+    "python3"
+  ],
+  "test_command": "PYTHONPATH=src python3 -m unittest discover -s tests -t . -v",
+  "acceptance_command": "PYTHONPATH=src python3 -m unittest discover -s acceptance_tests -t . -v"
+}

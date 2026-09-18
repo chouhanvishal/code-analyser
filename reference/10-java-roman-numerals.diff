@@ -1,0 +1,36 @@
+diff --git a/src/main/java/roman/RomanNumerals.java b/src/main/java/roman/RomanNumerals.java
+index 65bd701..7aeb64b 100644
+--- a/src/main/java/roman/RomanNumerals.java
++++ b/src/main/java/roman/RomanNumerals.java
+@@ -1,13 +1,29 @@
+ package roman;
+ 
+ public final class RomanNumerals {
++    private static final int[] VALUES = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
++    private static final String[] SYMBOLS = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
++
+     private RomanNumerals() {}
+ 
+     public static String toRoman(int n) {
+-        throw new UnsupportedOperationException("not implemented");
++        if (n < 1 || n > 3999) throw new IllegalArgumentException("out of range: " + n);
++        StringBuilder sb = new StringBuilder();
++        for (int i = 0; i < VALUES.length; i++) {
++            while (n >= VALUES[i]) { sb.append(SYMBOLS[i]); n -= VALUES[i]; }
++        }
++        return sb.toString();
+     }
+ 
+     public static int fromRoman(String s) {
+-        throw new UnsupportedOperationException("not implemented");
++        if (s == null || s.isEmpty()) throw new IllegalArgumentException("empty");
++        int total = 0, i = 0;
++        for (int k = 0; k < VALUES.length && i < s.length(); k++) {
++            while (s.startsWith(SYMBOLS[k], i)) { total += VALUES[k]; i += SYMBOLS[k].length(); }
++        }
++        if (i != s.length() || total < 1 || total > 3999 || !toRoman(total).equals(s)) {
++            throw new IllegalArgumentException("not a canonical roman numeral: " + s);
++        }
++        return total;
+     }
+ }

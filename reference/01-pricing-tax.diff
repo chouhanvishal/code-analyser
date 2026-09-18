@@ -1,0 +1,10 @@
+diff --git a/src/pricing/cart.py b/src/pricing/cart.py
+index b6aaf25..3fa0f91 100644
+--- a/src/pricing/cart.py
++++ b/src/pricing/cart.py
+@@ -13,4 +13,4 @@ def subtotal(items):
+ 
+ 
+ def total(items, tax_rate):
+-    return round(subtotal(items) * tax_rate, 2)
++    return round(subtotal(items) * (1 + tax_rate), 2)

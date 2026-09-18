@@ -1,0 +1,11 @@
+{
+  "request_id": "09-rust-kv-parse",
+  "task": "Implement `parse` in `src/lib.rs`. It currently calls `todo!()`.\n\n`parse(input: &str) -> Result<Vec<(String, String)>, ParseError>` reads\nlines of `key = value`. Blank lines and lines whose first non-space\ncharacter is `#` are skipped. Each other line must contain `=`; the key\nis the trimmed text before the first `=`, the value the trimmed text\nafter it (a value may itself contain `=`). Errors, with 1-based line\nnumbers: `MissingEquals(line)` when there is no `=`, `EmptyKey(line)`\nwhen the trimmed key is empty, `Duplicate(key)` when a key repeats.\nPairs are returned in input order. No crates outside std.",
+  "deadline_seconds": 300,
+  "language": "rust",
+  "toolchain": [
+    "cargo"
+  ],
+  "test_command": "cargo test --offline",
+  "acceptance_command": "cp acceptance_tests/acceptance.rs tests/zz_acceptance.rs && cargo test --offline --test zz_acceptance"
+}
