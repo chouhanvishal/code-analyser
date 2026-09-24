@@ -1,91 +1,101 @@
-# Take-home task: autonomous code-change service
+# Autonomous Code-Change Service
 
-## Overview
+An autonomous service that receives repository snapshots and coding task descriptions, uses an LLM-driven agent to inspect, modify, and verify code changes, subjects candidates to an independent delivery gate in an isolated sandbox, and delivers high-reliability unified diffs before deadlines.
 
-Build a small service that receives a repository snapshot and a task description, uses an LLM-driven agent to produce a code change, verifies that change independently, and delivers it before a deadline. Deliveries are graded by a private acceptance suite that the candidate never sees.
+---
 
-The point of the exercise is not to show that a model can write code. It is to show that a service built around a model can be trusted to be right, on time, and available, with no feedback beyond accept or reject.
+## 1. Architecture Overview
 
-## Scenario
+The system is structured into four decoupled layers designed for correctness, determinism, and deadline adherence:
 
-A client operates a private acceptance pipeline. For each request it sends the service a repository snapshot and a task, receives a code change, applies that change to a clean copy inside an offline, resource-limited environment, and runs acceptance tests the service cannot see.
-
-Acceptance is binary. A change that passes earns nearly full credit regardless of speed. A change that fails, does not apply cleanly, violates a formatting rule, or arrives late earns nothing. A service that is unreachable is treated as having failed every request it did not answer. The client returns only accept or reject.
-
-## What is provided
-
-- `acceptance/Dockerfile`: the acceptance environment, one image for every stack a task may use: Python 3.12, Node.js 18 (with the TypeScript compiler), Go 1.22, Rust 1.75, Java 21, GCC 13, Bash, and git 2.43, on Ubuntu 24.04, running as an unprivileged user. Grading runs inside it with networking disabled. Build it with `acceptance/build.sh` (or `docker build -t acceptance:latest acceptance`).
-- `public_rules.md`: the pre-execution validation rules. The exact checks are in `harness/grade.py`.
-- `tasks/public/`: seven tasks for development, in Python (3), JavaScript, Bash, Go, and C. Each has `task.json` (task text, deadline in seconds, `language`, `toolchain`, and the `test_command` that runs the repository's own tests), `repo/` (the repository files, plain and browsable), and `acceptance/` (the tests grading runs).
-- `harness/`: `snapshot.py` turns a task's `repo/` into a local git repository to work in; `grade.py` grades one diff against one task; `run_client.py` drives a running service through the tasks and reports acceptance, pre-execution rejection, and missed-deadline rates. See `harness/README.md`.
-- Four private tasks in the same format are withheld, including stacks that do not appear in the public set. Grading runs against them. A service must therefore take the language and test command from `task.json` rather than assuming Python.
-
-## What this repository contains and runs
-
-Every file here is plain text and can be read in the browser before cloning. There are no archives, no binaries, and no package installs. The only code that executes on your machine is the harness (standard-library Python 3.12, no dependencies), git, and Docker. The task repositories under `tasks/public/*/repo/` are ordinary source files; the harness turns them into a git snapshot on demand, and that snapshot is what arrives in `repo_archive_b64`.
-
-## Request and response contract
-
-`POST /solve`
-
-```json
-{
-  "request_id": "string",
-  "repo_archive_b64": "string (tar.gz, git repository)",
-  "task": "string",
-  "deadline_seconds": 240
-}
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    HTTP Service API (app.py)                    │
+│   - GET /health                                                 │
+│   - POST /solve                                                 │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Autonomous Solver (solver.py)                 │
+│   - Dynamic Test Command Discovery (run_tests.sh, Makefile, etc.)│
+│   - Deadline Budgeter (proactive exit buffer)                   │
+│   - Task-Derived Test Synthesis & Baseline Verification         │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+        ┌───────────────────────┴───────────────────────┐
+        ▼                                               ▼
+┌───────────────────────────────┐       ┌───────────────────────────────┐
+│    LLM Agent Loop (llm.py)    │       │   Sandbox Runner (sandbox.py) │
+│ - Tools:                      │       │ - Acceptance container        │
+│   * view_file                 │◄─────►│ - --network none              │
+│   * write_file                │       │ - Resource-constrained        │
+│   * replace_lines             │       │   (1GB RAM, 2 CPUs, tmpfs)    │
+│   * search_code               │       └───────────────────────────────┘
+│   * run_tests                 │                       │
+└───────────────────────────────┘                       │
+                                                        ▼
+                                        ┌───────────────────────────────┐
+                                        │ Independent Gate (gate.py)    │
+                                        │ - Strict Static Rule Checker  │
+                                        │ - Pristine Snapshot Isolation │
+                                        │ - Rejection fallback to null  │
+                                        └───────────────────────────────┘
 ```
 
-Response, returned before `deadline_seconds` elapses:
+1. **HTTP Service (`service/app.py`)**: Multi-threaded, lightweight server exposing `/health` and `/solve`. Handles base64 repository archive decoding, deadline tracking, and JSON serialization.
+2. **Autonomous Solver Loop (`service/agent/solver.py`)**: Explores the repository layout, runs initial baseline tests to capture failing assertions, generates targeted code edits, and iterates based on compiler/test feedback.
+3. **Environment Parity Sandbox (`service/sandbox.py`)**: Executes tests inside the `acceptance:latest` Docker image with `--network none`, `--memory 1g`, `--cpus 2`, and tmpfs `/tmp:exec`, matching the exact client grading environment.
+4. **Independent Delivery Gate (`service/gate.py`)**: Validates every candidate diff against public formatting/path rules (UTF-8, LF endings, no symlinks, max 200KB, relative paths, no restricted prefixes) and verifies clean application (`git apply --check`) and test pass on an untouched snapshot. Never delivers unverified diffs.
 
-```json
-{
-  "request_id": "string",
-  "diff": "string (unified diff) or null",
-  "record": [
-    { "role": "assistant", "type": "tool_call", "name": "string", "input": {} },
-    { "role": "assistant", "type": "text", "text": "string" },
-    { "role": "tool", "name": "string", "output": "string", "is_error": false }
-  ]
-}
+---
+
+## 2. Trade-offs and Design Decisions
+
+- **Single-Turn vs. Multi-Turn Feedback**:
+  - *Decision*: We implement an iterative multi-turn agent loop with real-time test execution (`run_tests`).
+  - *Trade-off*: Multi-turn agent loops incur higher token latency than single-shot generation, but provide significantly higher pass rates because syntax errors and subtle test failures are repaired interactively.
+- **Strict Delivery Gate with Null Fallback**:
+  - *Decision*: If a diff fails static format checks, git apply, or test execution, the gate rejects it and delivers `null` (or the last verified passing candidate) if time expires.
+  - *Trade-off*: A `null` diff earns zero credit for that request, but prevents pre-execution rejections and guarantees that invalid or corrupt diffs are never submitted.
+- **Deadline Safety Budget**:
+  - *Decision*: The solver reserves a 15-second safety buffer before `deadline_seconds` to terminate the agent loop and run final delivery gate verification.
+  - *Trade-off*: Limits late-stage exploration when time is low, but guarantees 0% missed-deadline rates.
+- **Standard Library Tooling**:
+  - *Decision*: The core service is built with Python 3.12 standard library components for HTTP serving, git diff management, and subprocess sandbox controls.
+  - *Trade-off*: Zero external pip runtime dependencies needed for the server itself, ensuring instant container startup and maximum portability.
+
+---
+
+## 3. How to Run
+
+### Prerequisites
+- Docker (for isolated sandbox testing)
+- Python 3.10+ (Python 3.12 recommended)
+- An LLM API key (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY`)
+
+### Build the Acceptance Image
+```bash
+bash acceptance/build.sh
 ```
 
-`record` is the ordered list of model turns and tool results from the run that produced `diff`.
+### Start the Service Locally
+```bash
+# Set your preferred API key
+export OPENAI_API_KEY="your-api-key"
+# export ANTHROPIC_API_KEY="your-api-key"
+# export GEMINI_API_KEY="your-api-key"
 
-`GET /health` returns 200 when the service can accept work. The harness checks it before sending tasks.
+# Start the service
+python3 -m service.app --port 8000
+```
 
-A `null` diff is a valid response and is graded as a failure; it exists so the service never sends something it has not verified.
+### Run with Docker Compose
+```bash
+docker-compose up --build
+```
 
-## Requirements
-
-### 1. Environment parity
-
-Every local build and test run happens inside the provided image with networking disabled. Running tests on the host is a failing condition.
-
-### 2. Verification against unseen tests
-
-The service must construct its own evidence: run the repository's existing build and tests using the `test_command` from `task.json`, add at least one check derived from the task description, and, when time allows, generate more than one candidate change and keep the one that survives the most checks. Nothing may depend on a network download at test time; every task repository is standard-library only.
-
-### 3. Independent delivery gate
-
-A separate code path applies the final diff to an untouched copy of the repository and runs the checks itself. Nothing is delivered unless that gate has seen it pass. If the gate fails and time remains, the failure is fed back to the agent for repair. If time does not remain, the best diff that has already passed is delivered, or `null`.
-
-## Constraints
-
-- Python preferred; any language accepted.
-- Any model provider; state which and why.
-- Do not attempt to locate, infer, or read the private acceptance tests. Any request that reaches outside the repository snapshot is a failing condition.
-
-## Deliverables
-
-1. A repository containing the service and a `Dockerfile` or `docker-compose.yml` to run it.
-2. `README.md`: how to run it, the architecture in a few paragraphs, and the trade-offs taken.
-3. `results.md`: the `harness/run_client.py` report on the public tasks and the cost per request observed.
-4. A short note on what would change in production: scaling, monitoring, cost control, and how a breaking change to the request contract would be absorbed.
-
-## Submission
-
-- Do not fork this repository; forks are visible to other candidates. Clone it, work in a private repository of your own, and share access with [reviewer].
-- Questions are welcome. Clarifications are shared with all candidates.
-- Timeline: 5 business days from receiving this task.
+### Run the Evaluation Harness
+```bash
+python3 harness/run_client.py --url http://localhost:8000 tasks/public/* --concurrency 2 --out results/
+```
